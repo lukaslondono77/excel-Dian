@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { Upload, FileText, Download, Eye, Loader2, Calendar, BarChart3, FileSpreadsheet } from 'lucide-react';
+import { getDianServiceUrl, getGatewayServiceUrl } from './config';
 import './App.css';
 
 function App() {
@@ -74,7 +75,7 @@ function App() {
     });
 
     try {
-      const response = await axios.post('http://localhost:8003/process_dian_files', formData, {
+      const response = await axios.post(getDianServiceUrl('/process_dian_files'), formData, {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'multipart/form-data',
@@ -96,7 +97,7 @@ function App() {
     if (!dianResults?.download_url) return;
 
     try {
-      const response = await axios.get(`http://localhost:8003${dianResults.download_url}`, {
+      const response = await axios.get(getDianServiceUrl(dianResults.download_url), {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
         },
@@ -141,7 +142,7 @@ function App() {
       console.log('Uploading file:', file.name, 'Size:', file.size);
       
       // Call the gateway service instead of individual services
-      const response = await axios.post('http://localhost:8000/process_excel_to_pdf', formData, {
+      const response = await axios.post(getGatewayServiceUrl('/process_excel_to_pdf'), formData, {
         headers: {
           'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'multipart/form-data',
@@ -185,7 +186,7 @@ function App() {
 
     try {
       // Call the gateway service for PDF generation
-      const response = await axios.post('http://localhost:8000/process_excel_to_pdf', {
+      const response = await axios.post(getGatewayServiceUrl('/process_excel_to_pdf'), {
         data: parsedData.parsed_data,
         file_id: parsedData.file_id,
         filename: parsedData.filename,
@@ -212,7 +213,7 @@ function App() {
     try {
       // If it's a gateway download URL, call it directly
       if (pdfUrl.startsWith('/download_pdf/')) {
-        const response = await axios.get(`http://localhost:8000${pdfUrl}`, {
+        const response = await axios.get(getGatewayServiceUrl(pdfUrl), {
           headers: {
             'Authorization': `Bearer ${getAuthToken()}`,
           },
