@@ -31,7 +31,7 @@ services:
     staticPublishPath: frontend/build
     envVars:
       - key: NODE_VERSION
-        value: 18
+        value: 20
     routes:
       - type: rewrite
         source: /*
