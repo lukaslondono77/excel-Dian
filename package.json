@@ -1,0 +1,16 @@
+{
+  "name": "excel-to-dian",
+  "version": "1.0.0",
+  "description": "Excel to DIAN - Convert Excel files to DIAN-compliant PDF reports",
+  "scripts": {
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "start:frontend": "cd frontend && npm start",
+    "install:frontend": "cd frontend && npm install"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+} 
