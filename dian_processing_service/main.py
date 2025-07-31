@@ -25,12 +25,7 @@ app = FastAPI(title="DIAN Processing Service", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://frontend:3000",
-        "https://excel-dian-1.onrender.com",
-        "https://excel-dian-frontend.onrender.com"
-    ],
+    allow_origins=["*"],  # Allow all origins for now
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
