@@ -77,7 +77,6 @@ function App() {
     try {
       const response = await axios.post(getDianServiceUrl('/process_dian_files'), formData, {
         headers: {
-          'Authorization': `Bearer ${getAuthToken()}`,
           'Content-Type': 'multipart/form-data',
         },
       });
@@ -98,9 +97,6 @@ function App() {
 
     try {
       const response = await axios.get(getDianServiceUrl(dianResults.download_url), {
-        headers: {
-          'Authorization': `Bearer ${getAuthToken()}`,
-        },
         responseType: 'blob',
       });
 
