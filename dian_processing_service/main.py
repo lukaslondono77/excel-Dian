@@ -383,7 +383,7 @@ async def process_dian_files(
     # token_payload: dict = Depends(verify_token)  # Temporarily disabled for testing
 ):
     """Process multiple files for DIAN reporting"""
-    user_id = token_payload.get("sub", "unknown")
+    user_id = "test_user"  # Temporarily hardcoded for testing
     processing_id = log_processing(user_id, "dian_processing", "started")
     
     try:
