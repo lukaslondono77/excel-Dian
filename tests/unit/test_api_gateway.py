@@ -199,12 +199,12 @@ class TestCORS:
         mock_pipeline.expire.return_value = mock_pipeline
         mock_pipeline.execute.return_value = [11]  # Incremented count
 
-        response = client.get("/health")
+        # Test with GET request and Origin header to trigger CORS
+        response = client.get("/health", headers={"Origin": "http://localhost:3000"})
 
-        # CORS headers should be present
+        # CORS headers should be present for simple requests
         assert "access-control-allow-origin" in response.headers
-        assert "access-control-allow-methods" in response.headers
-        assert "access-control-allow-headers" in response.headers
+        assert "access-control-allow-credentials" in response.headers
 
 
 class TestServiceRouting:
@@ -318,8 +318,9 @@ class TestServiceRouting:
         mock_pipeline.expire.return_value = mock_pipeline
         mock_pipeline.execute.return_value = [11]  # Incremented count
 
-        # Mock service failure
-        mock_http.request = AsyncMock(side_effect=Exception("Service unavailable"))
+        # Mock service failure with httpx.RequestError
+        import httpx
+        mock_http.request = AsyncMock(side_effect=httpx.RequestError("Service unavailable"))
 
         response = client.get("/auth/test-endpoint")
 

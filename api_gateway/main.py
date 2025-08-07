@@ -6,7 +6,7 @@ Handles routing, CORS, rate limiting, and request/response transformation.
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Any, Dict
+from typing import Any, Dict, Callable, AsyncGenerator, Union
 
 import httpx
 import redis
@@ -17,6 +17,8 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic_settings import BaseSettings
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import StreamingResponse
 
 from common.constants import (
     CORRELATION_ID_HEADER,
@@ -104,7 +106,7 @@ http_client = httpx.AsyncClient(timeout=30.0)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
     logger.info("Starting API Gateway", service_name=settings.service_name)
 
@@ -147,7 +149,7 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def add_correlation_id(request: Request, call_next):
+async def add_correlation_id(request: Request, call_next: Callable) -> Union[Response, Any]:
     """Add correlation ID to requests."""
     correlation_id = request.headers.get(CORRELATION_ID_HEADER, str(uuid.uuid4()))
     request.state.correlation_id = correlation_id
@@ -160,7 +162,7 @@ async def add_correlation_id(request: Request, call_next):
 
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def log_requests(request: Request, call_next: Callable) -> Union[Response, Any]:
     """Log all requests and responses."""
     start_time = time.time()
     correlation_id = getattr(request.state, "correlation_id", "unknown")
@@ -204,7 +206,7 @@ async def log_requests(request: Request, call_next):
 
 
 @app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
+async def rate_limit_middleware(request: Request, call_next: Callable) -> Union[Response, Any]:
     """Rate limiting middleware."""
     client_ip = request.client.host if request.client else "unknown"
     key = f"rate_limit:{client_ip}"
@@ -214,7 +216,7 @@ async def rate_limit_middleware(request: Request, call_next):
         current_requests = redis_client.get(key)
         if (
             current_requests
-            and int(current_requests) >= settings.default_requests_per_minute
+            and int(str(current_requests)) >= settings.default_requests_per_minute
         ):
             logger.warning(
                 "Rate limit exceeded",
@@ -246,7 +248,7 @@ async def get_correlation_id(request: Request) -> str:
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> Dict[str, Any]:
     """Health check endpoint."""
     try:
         # Check Redis connection
@@ -292,7 +294,7 @@ async def health_check():
 
 
 @app.get("/metrics")
-async def metrics():
+async def metrics() -> Response:
     """Prometheus metrics endpoint."""
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
@@ -301,7 +303,7 @@ async def metrics():
 @app.api_route("/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def auth_service_proxy(
     request: Request, path: str, correlation_id: str = Depends(get_correlation_id)
-):
+) -> Response:
     """Proxy requests to Auth Service."""
     return await proxy_request(request, settings.auth_service_url, path, correlation_id)
 
@@ -309,7 +311,7 @@ async def auth_service_proxy(
 @app.api_route("/dian/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def dian_service_proxy(
     request: Request, path: str, correlation_id: str = Depends(get_correlation_id)
-):
+) -> Response:
     """Proxy requests to DIAN Processing Service."""
     return await proxy_request(
         request, settings.dian_processing_service_url, path, correlation_id
@@ -319,7 +321,7 @@ async def dian_service_proxy(
 @app.api_route("/excel/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def excel_service_proxy(
     request: Request, path: str, correlation_id: str = Depends(get_correlation_id)
-):
+) -> Response:
     """Proxy requests to Excel Service."""
     return await proxy_request(
         request, settings.excel_service_url, path, correlation_id
@@ -329,14 +331,14 @@ async def excel_service_proxy(
 @app.api_route("/pdf/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def pdf_service_proxy(
     request: Request, path: str, correlation_id: str = Depends(get_correlation_id)
-):
+) -> Response:
     """Proxy requests to PDF Service."""
     return await proxy_request(request, settings.pdf_service_url, path, correlation_id)
 
 
 async def proxy_request(
     request: Request, service_url: str, path: str, correlation_id: str
-):
+) -> Response:
     """Proxy request to downstream service."""
     target_url = f"{service_url}/{path}"
 
@@ -379,7 +381,7 @@ async def proxy_request(
 
 
 @app.get("/")
-async def root():
+async def root() -> Dict[str, Any]:
     """Root endpoint."""
     return {
         "message": "DIAN Compliance Platform - API Gateway",
