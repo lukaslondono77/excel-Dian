@@ -66,7 +66,7 @@ class TestMetrics:
         """Test metrics endpoint returns Prometheus format."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         response = client.get("/metrics")
 
         assert response.status_code == 200
@@ -82,7 +82,7 @@ class TestRoot:
         """Test root endpoint returns service information."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         response = client.get("/")
 
         assert response.status_code == 200
@@ -101,7 +101,7 @@ class TestCorrelationId:
         """Test that correlation ID is added to response headers."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         response = client.get("/health")
 
         assert "X-Correlation-ID" in response.headers
@@ -112,7 +112,7 @@ class TestCorrelationId:
         """Test that provided correlation ID is preserved."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         test_correlation_id = "test-correlation-id-123"
         response = client.get(
             "/health", headers={"X-Correlation-ID": test_correlation_id}
@@ -155,7 +155,7 @@ class TestCORS:
         """Test that CORS headers are present."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         response = client.options("/health")
 
         # CORS headers should be present
@@ -173,7 +173,7 @@ class TestServiceRouting:
         """Test auth service proxy routing."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -192,7 +192,7 @@ class TestServiceRouting:
         """Test DIAN service proxy routing."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -211,7 +211,7 @@ class TestServiceRouting:
         """Test Excel service proxy routing."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -230,7 +230,7 @@ class TestServiceRouting:
         """Test PDF service proxy routing."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -249,7 +249,7 @@ class TestServiceRouting:
         """Test service unavailable handling."""
         # Mock Redis to avoid connection errors
         mock_redis.get.return_value = "10"  # Normal rate limit count
-        
+
         # Mock service failure
         mock_http.request.side_effect = Exception("Service unavailable")
 
