@@ -14,6 +14,7 @@ class ServiceName(str, Enum):
     EXCEL_SERVICE = "excel_service"
     PDF_SERVICE = "pdf_service"
 
+
 # Service Ports
 class ServicePort(int, Enum):
     API_GATEWAY = 8000
@@ -21,6 +22,7 @@ class ServicePort(int, Enum):
     DIAN_PROCESSING = 8002
     EXCEL_SERVICE = 8003
     PDF_SERVICE = 8004
+
 
 # HTTP Status Codes
 class HTTPStatus(int, Enum):
@@ -36,12 +38,14 @@ class HTTPStatus(int, Enum):
     INTERNAL_SERVER_ERROR = 500
     SERVICE_UNAVAILABLE = 503
 
+
 # File Types
 class FileType(str, Enum):
     EXCEL = "excel"
     CSV = "csv"
     PDF = "pdf"
     JSON = "json"
+
 
 # Supported File Extensions
 SUPPORTED_EXCEL_EXTENSIONS: List[str] = [".xlsx", ".xls", ".xlsm"]
@@ -56,9 +60,9 @@ class DIANConstants:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.ms-excel",
         "text/csv",
-        "application/pdf"
+        "application/pdf",
     ]
-    
+
     # DIAN Document Types
     FORMATO_1001 = "1001"
     FORMATO_1002 = "1002"
@@ -71,6 +75,7 @@ class DIANConstants:
     FORMATO_1009 = "1009"
     FORMATO_1010 = "1010"
 
+
 # Security Constants
 class SecurityConstants:
     JWT_ALGORITHM = "HS256"
@@ -82,11 +87,13 @@ class SecurityConstants:
     MFA_DIGITS = 6
     MFA_PERIOD = 30
 
+
 # Rate Limiting
 class RateLimitConstants:
     DEFAULT_REQUESTS_PER_MINUTE = 60
     AUTH_REQUESTS_PER_MINUTE = 10
     FILE_UPLOAD_REQUESTS_PER_MINUTE = 20
+
 
 # Database Constants
 class DatabaseConstants:
@@ -94,6 +101,7 @@ class DatabaseConstants:
     MAX_POOL_SIZE = 20
     POOL_TIMEOUT = 30
     CONNECTION_TIMEOUT = 10
+
 
 # Logging Constants
 class LoggingConstants:
@@ -105,8 +113,9 @@ class LoggingConstants:
         "logger": "%(name)s",
         "message": "%(message)s",
         "service": "%(service)s",
-        "correlation_id": "%(correlation_id)s"
+        "correlation_id": "%(correlation_id)s",
     }
+
 
 # Environment Variables
 class Environment(str, Enum):
@@ -115,6 +124,7 @@ class Environment(str, Enum):
     PRODUCTION = "production"
     TESTING = "testing"
 
+
 # API Response Messages
 class APIMessages:
     # Success Messages
@@ -122,7 +132,7 @@ class APIMessages:
     CREATED = "Resource created successfully"
     UPDATED = "Resource updated successfully"
     DELETED = "Resource deleted successfully"
-    
+
     # Error Messages
     INVALID_CREDENTIALS = "Invalid username or password"
     UNAUTHORIZED = "Unauthorized access"
@@ -131,18 +141,19 @@ class APIMessages:
     VALIDATION_ERROR = "Validation error"
     INTERNAL_ERROR = "Internal server error"
     SERVICE_UNAVAILABLE = "Service temporarily unavailable"
-    
+
     # File Processing Messages
     FILE_UPLOADED = "File uploaded successfully"
     FILE_PROCESSED = "File processed successfully"
     FILE_TOO_LARGE = "File size exceeds maximum limit"
     INVALID_FILE_TYPE = "Invalid file type"
     FILE_NOT_FOUND = "File not found"
-    
+
     # DIAN Specific Messages
     DIAN_VALIDATION_SUCCESS = "DIAN validation completed successfully"
     DIAN_VALIDATION_ERROR = "DIAN validation failed"
     DIAN_FORMAT_ERROR = "File does not conform to DIAN format requirements"
+
 
 # Correlation ID Header
 CORRELATION_ID_HEADER = "X-Correlation-ID"
@@ -152,6 +163,7 @@ class HealthStatus(str, Enum):
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
     DEGRADED = "degraded"
+
 
 # Metrics Constants
 class MetricsConstants:
