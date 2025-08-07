@@ -1,0 +1,24 @@
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["common", "api_gateway", "auth_service", "dian_processing_service", "excel_service", "pdf_service"]
+known_third_party = ["fastapi", "uvicorn", "httpx", "redis", "pydantic", "pydantic_settings", "prometheus_client", "structlog"]

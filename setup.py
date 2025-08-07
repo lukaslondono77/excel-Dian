@@ -2,7 +2,7 @@
 Setup script for DIAN Compliance Platform common package.
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="dian-compliance-common",

@@ -6,25 +6,25 @@ Handles routing, CORS, rate limiting, and request/response transformation.
 import time
 import uuid
 from contextlib import asynccontextmanager
-from typing import Dict, Any
+from typing import Any, Dict
 
 import httpx
 import redis
-from fastapi import FastAPI, Request, Response, HTTPException, Depends
+import structlog
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from pydantic_settings import BaseSettings
-import structlog
 
 from common.constants import (
+    CORRELATION_ID_HEADER,
+    APIMessages,
+    HealthStatus,
+    HTTPStatus,
     ServiceName,
     ServicePort,
-    HTTPStatus,
-    APIMessages,
-    CORRELATION_ID_HEADER,
-    HealthStatus,
 )
 
 # Configure structured logging
