@@ -28,7 +28,7 @@ class TestHealthCheck:
             mock_pipeline.incr.return_value = mock_pipeline
             mock_pipeline.expire.return_value = mock_pipeline
             mock_pipeline.execute.return_value = [11]  # Incremented count
-            
+
             # Mock Redis ping for health check
             mock_redis.ping.return_value = True
 
@@ -58,7 +58,7 @@ class TestHealthCheck:
             mock_pipeline.incr.return_value = mock_pipeline
             mock_pipeline.expire.return_value = mock_pipeline
             mock_pipeline.execute.return_value = [11]  # Incremented count
-            
+
             # Mock Redis failure for health check
             mock_redis.ping.side_effect = Exception("Redis connection failed")
 
