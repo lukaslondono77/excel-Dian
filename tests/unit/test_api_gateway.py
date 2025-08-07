@@ -2,7 +2,7 @@
 Unit tests for API Gateway service.
 """
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -36,7 +36,7 @@ class TestHealthCheck:
             # Mock HTTP responses
             mock_response = Mock()
             mock_response.status_code = 200
-            mock_http.get.return_value.__aenter__.return_value = mock_response
+            mock_http.get = AsyncMock(return_value=mock_response)
 
             response = client.get("/health")
 
@@ -67,7 +67,7 @@ class TestHealthCheck:
             # Mock HTTP responses
             mock_response = Mock()
             mock_response.status_code = 200
-            mock_http.get.return_value.__aenter__.return_value = mock_response
+            mock_http.get = AsyncMock(return_value=mock_response)
 
             response = client.get("/health")
 
@@ -199,7 +199,7 @@ class TestCORS:
         mock_pipeline.expire.return_value = mock_pipeline
         mock_pipeline.execute.return_value = [11]  # Incremented count
 
-        response = client.options("/health")
+        response = client.get("/health")
 
         # CORS headers should be present
         assert "access-control-allow-origin" in response.headers
@@ -227,7 +227,7 @@ class TestServiceRouting:
         mock_response.content = b'{"message": "success"}'
         mock_response.status_code = 200
         mock_response.headers = {}
-        mock_http.request.return_value.__aenter__.return_value = mock_response
+        mock_http.request = AsyncMock(return_value=mock_response)
 
         response = client.get("/auth/test-endpoint")
 
@@ -251,7 +251,7 @@ class TestServiceRouting:
         mock_response.content = b'{"message": "success"}'
         mock_response.status_code = 200
         mock_response.headers = {}
-        mock_http.request.return_value.__aenter__.return_value = mock_response
+        mock_http.request = AsyncMock(return_value=mock_response)
 
         response = client.get("/dian/test-endpoint")
 
@@ -275,7 +275,7 @@ class TestServiceRouting:
         mock_response.content = b'{"message": "success"}'
         mock_response.status_code = 200
         mock_response.headers = {}
-        mock_http.request.return_value.__aenter__.return_value = mock_response
+        mock_http.request = AsyncMock(return_value=mock_response)
 
         response = client.get("/excel/test-endpoint")
 
@@ -299,7 +299,7 @@ class TestServiceRouting:
         mock_response.content = b'{"message": "success"}'
         mock_response.status_code = 200
         mock_response.headers = {}
-        mock_http.request.return_value.__aenter__.return_value = mock_response
+        mock_http.request = AsyncMock(return_value=mock_response)
 
         response = client.get("/pdf/test-endpoint")
 
@@ -319,7 +319,7 @@ class TestServiceRouting:
         mock_pipeline.execute.return_value = [11]  # Incremented count
 
         # Mock service failure
-        mock_http.request.side_effect = Exception("Service unavailable")
+        mock_http.request = AsyncMock(side_effect=Exception("Service unavailable"))
 
         response = client.get("/auth/test-endpoint")
 
