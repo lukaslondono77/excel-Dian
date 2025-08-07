@@ -1,136 +1,250 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  # API Gateway Service
-  gateway_service:
-    build:
-      context: ./gateway_service
-    ports:
-      - "8000:8000"
-    environment:
-      - JWT_SECRET=your-secret-key-change-in-production
-      - DB_HOST=postgres
-      - DB_NAME=dian_saas
-      - DB_USER=admin
-      - DB_PASSWORD=admin123
-      - DB_PORT=5432
-      - EXCEL_SERVICE_URL=http://excel_service:8001
-      - PDF_SERVICE_URL=http://pdf_service:8002
-      - DIAN_SERVICE_URL=http://dian_processing_service:8003
-    depends_on:
-      - postgres
-      - excel_service
-      - pdf_service
-      - dian_processing_service
-
-  # Excel Service
-  excel_service:
-    build:
-      context: ./excel_service
-    ports:
-      - "8001:8001"
-    environment:
-      - JWT_SECRET=your-secret-key-change-in-production
-      - DB_HOST=postgres
-      - DB_NAME=dian_saas
-      - DB_USER=admin
-      - DB_PASSWORD=admin123
-      - DB_PORT=5432
-    depends_on:
-      - postgres
-    volumes:
-      - excel_temp:/app/temp_excel
-
-  # PDF Service
-  pdf_service:
-    build:
-      context: ./pdf_service
-    ports:
-      - "8002:8002"
-    environment:
-      - JWT_SECRET=your-secret-key-change-in-production
-      - DB_HOST=postgres
-      - DB_NAME=dian_saas
-      - DB_USER=admin
-      - DB_PASSWORD=admin123
-      - DB_PORT=5432
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-your_access_key}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-your_secret_key}
-      - S3_BUCKET=${S3_BUCKET:-dian-pdf-reports}
-      - AWS_REGION=${AWS_REGION:-us-east-1}
-    depends_on:
-      - postgres
-    volumes:
-      - pdf_temp:/app/pdfs
-
-  # DIAN Processing Service
-  dian_processing_service:
-    build:
-      context: ./dian_processing_service
-    ports:
-      - "8003:8003"
-    environment:
-      - JWT_SECRET=your-secret-key-change-in-production
-      - DB_HOST=postgres
-      - DB_NAME=dian_saas
-      - DB_USER=admin
-      - DB_PASSWORD=admin123
-      - DB_PORT=5432
-    depends_on:
-      - postgres
-    volumes:
-      - dian_reports:/app/dian_reports
-
   # PostgreSQL Database
   postgres:
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
       POSTGRES_DB: dian_saas
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d dian_saas"]
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
-  # React Frontend
+  # Redis for Rate Limiting and Caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-your-redis-password}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # API Gateway
+  api_gateway:
+    build:
+      context: ./api_gateway
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2024-01-01}
+        VCS_REF: ${VCS_REF:-latest}
+        VERSION: ${VERSION:-1.0.0}
+    ports:
+      - "8000:8000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-your-redis-password}
+      - AUTH_SERVICE_URL=http://auth_service:8001
+      - DIAN_PROCESSING_SERVICE_URL=http://dian_processing_service:8002
+      - EXCEL_SERVICE_URL=http://excel_service:8003
+      - PDF_SERVICE_URL=http://pdf_service:8004
+      - SERVICE_NAME=api_gateway
+      - SERVICE_VERSION=1.0.0
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+    depends_on:
+      auth_service:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - gateway_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Auth Service
+  auth_service:
+    build:
+      context: ./auth_service
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2024-01-01}
+        VCS_REF: ${VCS_REF:-latest}
+        VERSION: ${VERSION:-1.0.0}
+    ports:
+      - "8001:8001"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - DB_HOST=postgres
+      - DB_NAME=dian_saas
+      - DB_USER=admin
+      - DB_PASSWORD=${DB_PASSWORD:-admin123}
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-your-redis-password}
+      - FERNET_MASTER_KEY=${FERNET_MASTER_KEY:-your-fernet-key-change-in-production}
+      - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:-your-mfa-key-change-in-production}
+      - MFA_ISSUER_NAME=DIAN Compliance Platform
+      - SERVICE_NAME=auth_service
+      - SERVICE_VERSION=1.0.0
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - auth_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # DIAN Processing Service
+  dian_processing_service:
+    build:
+      context: ./dian_processing_service
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2024-01-01}
+        VCS_REF: ${VCS_REF:-latest}
+        VERSION: ${VERSION:-1.0.0}
+    ports:
+      - "8002:8002"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - DB_HOST=postgres
+      - DB_NAME=dian_saas
+      - DB_USER=admin
+      - DB_PASSWORD=${DB_PASSWORD:-admin123}
+      - DB_PORT=5432
+      - FERNET_MASTER_KEY=${FERNET_MASTER_KEY:-your-fernet-key-change-in-production}
+      - MAX_FILE_SIZE_MB=50
+      - ALLOWED_UPLOAD_DIR=/app/uploads
+      - QUARANTINE_DIR=/app/quarantine
+      - SERVICE_NAME=dian_processing_service
+      - SERVICE_VERSION=1.0.0
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - dian_reports:/app/dian_reports
+      - dian_uploads:/app/uploads
+      - dian_quarantine:/app/quarantine
+      - dian_processing_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Excel Service
+  excel_service:
+    build:
+      context: ./excel_service
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2024-01-01}
+        VCS_REF: ${VCS_REF:-latest}
+        VERSION: ${VERSION:-1.0.0}
+    ports:
+      - "8003:8003"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - MAX_FILE_SIZE_MB=50
+      - ALLOWED_UPLOAD_DIR=/app/uploads
+      - SERVICE_NAME=excel_service
+      - SERVICE_VERSION=1.0.0
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+    volumes:
+      - excel_uploads:/app/uploads
+      - excel_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PDF Service
+  pdf_service:
+    build:
+      context: ./pdf_service
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2024-01-01}
+        VCS_REF: ${VCS_REF:-latest}
+        VERSION: ${VERSION:-1.0.0}
+    ports:
+      - "8004:8004"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - FERNET_MASTER_KEY=${FERNET_MASTER_KEY:-your-fernet-key-change-in-production}
+      - SERVICE_NAME=pdf_service
+      - SERVICE_VERSION=1.0.0
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+    volumes:
+      - pdf_reports:/app/reports
+      - pdf_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend (React/TypeScript)
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      - VITE_API_GATEWAY_URL=http://localhost:8000
+      - VITE_AUTH_SERVICE_URL=http://localhost:8001
+      - VITE_DIAN_PROCESSING_URL=http://localhost:8002
+      - VITE_EXCEL_SERVICE_URL=http://localhost:8003
+      - VITE_PDF_SERVICE_URL=http://localhost:8004
     depends_on:
-      - gateway_service
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-
-  # Optional: S3 Mock for development
-  s3_mock:
-    image: minio/minio:latest
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - s3_data:/data
-    profiles:
-      - s3-mock
+      - api_gateway
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  pgdata:
-  excel_temp:
-  pdf_temp:
+  postgres_data:
+  redis_data:
   dian_reports:
-  s3_data:
+  dian_uploads:
+  dian_quarantine:
+  excel_uploads:
+  pdf_reports:
+  gateway_logs:
+  auth_logs:
+  dian_processing_logs:
+  excel_logs:
+  pdf_logs:

@@ -1,0 +1,208 @@
+"""
+Unit tests for API Gateway service.
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+from unittest.mock import Mock, patch
+
+from api_gateway.main import app
+
+client = TestClient(app)
+
+class TestHealthCheck:
+    """Test health check endpoint."""
+    
+    def test_health_check_success(self):
+        """Test successful health check."""
+        with patch('api_gateway.main.redis_client') as mock_redis, \
+             patch('api_gateway.main.http_client') as mock_http:
+            
+            # Mock Redis ping
+            mock_redis.ping.return_value = True
+            
+            # Mock HTTP responses
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_http.get.return_value.__aenter__.return_value = mock_response
+            
+            response = client.get("/health")
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert data["status"] == "healthy"
+            assert data["service"] == "api_gateway"
+            assert "dependencies" in data
+
+    def test_health_check_redis_failure(self):
+        """Test health check with Redis failure."""
+        with patch('api_gateway.main.redis_client') as mock_redis, \
+             patch('api_gateway.main.http_client') as mock_http:
+            
+            # Mock Redis failure
+            mock_redis.ping.side_effect = Exception("Redis connection failed")
+            
+            # Mock HTTP responses
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_http.get.return_value.__aenter__.return_value = mock_response
+            
+            response = client.get("/health")
+            
+            assert response.status_code == 200
+            data = response.json()
+            assert data["dependencies"]["redis"] == "unhealthy"
+
+class TestMetrics:
+    """Test metrics endpoint."""
+    
+    def test_metrics_endpoint(self):
+        """Test metrics endpoint returns Prometheus format."""
+        response = client.get("/metrics")
+        
+        assert response.status_code == 200
+        assert "text/plain" in response.headers["content-type"]
+        assert "http_requests_total" in response.text
+
+class TestRoot:
+    """Test root endpoint."""
+    
+    def test_root_endpoint(self):
+        """Test root endpoint returns service information."""
+        response = client.get("/")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "DIAN Compliance Platform - API Gateway"
+        assert "version" in data
+        assert "environment" in data
+        assert "docs" in data
+
+class TestCorrelationId:
+    """Test correlation ID functionality."""
+    
+    def test_correlation_id_header(self):
+        """Test that correlation ID is added to response headers."""
+        response = client.get("/health")
+        
+        assert "X-Correlation-ID" in response.headers
+        assert response.headers["X-Correlation-ID"] is not None
+
+    def test_correlation_id_preserved(self):
+        """Test that provided correlation ID is preserved."""
+        test_correlation_id = "test-correlation-id-123"
+        response = client.get("/health", headers={"X-Correlation-ID": test_correlation_id})
+        
+        assert response.headers["X-Correlation-ID"] == test_correlation_id
+
+class TestRateLimiting:
+    """Test rate limiting functionality."""
+    
+    @patch('api_gateway.main.redis_client')
+    def test_rate_limit_exceeded(self, mock_redis):
+        """Test rate limit exceeded response."""
+        # Mock Redis to return rate limit exceeded
+        mock_redis.get.return_value = "60"  # Already at limit
+        
+        response = client.get("/health")
+        
+        assert response.status_code == 429
+        assert "Rate limit exceeded" in response.json()["detail"]
+
+    @patch('api_gateway.main.redis_client')
+    def test_rate_limit_normal(self, mock_redis):
+        """Test normal rate limiting."""
+        # Mock Redis to return normal count
+        mock_redis.get.return_value = "10"
+        
+        response = client.get("/health")
+        
+        # Should not be rate limited
+        assert response.status_code != 429
+
+class TestCORS:
+    """Test CORS functionality."""
+    
+    def test_cors_headers(self):
+        """Test that CORS headers are present."""
+        response = client.options("/health")
+        
+        # CORS headers should be present
+        assert "access-control-allow-origin" in response.headers
+        assert "access-control-allow-methods" in response.headers
+        assert "access-control-allow-headers" in response.headers
+
+class TestServiceRouting:
+    """Test service routing functionality."""
+    
+    @patch('api_gateway.main.http_client')
+    def test_auth_service_proxy(self, mock_http):
+        """Test auth service proxy routing."""
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.content = b'{"message": "success"}'
+        mock_response.status_code = 200
+        mock_response.headers = {}
+        mock_http.request.return_value.__aenter__.return_value = mock_response
+        
+        response = client.get("/auth/test-endpoint")
+        
+        # Should proxy to auth service
+        assert response.status_code == 200
+
+    @patch('api_gateway.main.http_client')
+    def test_dian_service_proxy(self, mock_http):
+        """Test DIAN service proxy routing."""
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.content = b'{"message": "success"}'
+        mock_response.status_code = 200
+        mock_response.headers = {}
+        mock_http.request.return_value.__aenter__.return_value = mock_response
+        
+        response = client.get("/dian/test-endpoint")
+        
+        # Should proxy to DIAN service
+        assert response.status_code == 200
+
+    @patch('api_gateway.main.http_client')
+    def test_excel_service_proxy(self, mock_http):
+        """Test Excel service proxy routing."""
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.content = b'{"message": "success"}'
+        mock_response.status_code = 200
+        mock_response.headers = {}
+        mock_http.request.return_value.__aenter__.return_value = mock_response
+        
+        response = client.get("/excel/test-endpoint")
+        
+        # Should proxy to Excel service
+        assert response.status_code == 200
+
+    @patch('api_gateway.main.http_client')
+    def test_pdf_service_proxy(self, mock_http):
+        """Test PDF service proxy routing."""
+        # Mock successful response
+        mock_response = Mock()
+        mock_response.content = b'{"message": "success"}'
+        mock_response.status_code = 200
+        mock_response.headers = {}
+        mock_http.request.return_value.__aenter__.return_value = mock_response
+        
+        response = client.get("/pdf/test-endpoint")
+        
+        # Should proxy to PDF service
+        assert response.status_code == 200
+
+    @patch('api_gateway.main.http_client')
+    def test_service_unavailable(self, mock_http):
+        """Test service unavailable handling."""
+        # Mock service failure
+        mock_http.request.side_effect = Exception("Service unavailable")
+        
+        response = client.get("/auth/test-endpoint")
+        
+        # Should return service unavailable error
+        assert response.status_code == 503
+        assert "Service temporarily unavailable" in response.json()["detail"]
