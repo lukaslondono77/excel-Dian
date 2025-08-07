@@ -52,6 +52,7 @@ SUPPORTED_EXCEL_EXTENSIONS: List[str] = [".xlsx", ".xls", ".xlsm"]
 SUPPORTED_CSV_EXTENSIONS: List[str] = [".csv"]
 SUPPORTED_PDF_EXTENSIONS: List[str] = [".pdf"]
 
+
 # DIAN Constants
 class DIANConstants:
     MAX_FILE_SIZE_MB = 50
