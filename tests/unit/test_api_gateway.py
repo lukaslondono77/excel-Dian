@@ -2,7 +2,7 @@
 Unit tests for API Gateway service.
 """
 
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from fastapi.testclient import TestClient
