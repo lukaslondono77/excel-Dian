@@ -149,7 +149,9 @@ app.add_middleware(
 
 
 @app.middleware("http")
-async def add_correlation_id(request: Request, call_next: Callable) -> Union[Response, Any]:
+async def add_correlation_id(
+    request: Request, call_next: Callable
+) -> Union[Response, Any]:
     """Add correlation ID to requests."""
     correlation_id = request.headers.get(CORRELATION_ID_HEADER, str(uuid.uuid4()))
     request.state.correlation_id = correlation_id
@@ -206,7 +208,9 @@ async def log_requests(request: Request, call_next: Callable) -> Union[Response,
 
 
 @app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next: Callable) -> Union[Response, Any]:
+async def rate_limit_middleware(
+    request: Request, call_next: Callable
+) -> Union[Response, Any]:
     """Rate limiting middleware."""
     client_ip = request.client.host if request.client else "unknown"
     key = f"rate_limit:{client_ip}"

@@ -320,7 +320,10 @@ class TestServiceRouting:
 
         # Mock service failure with httpx.RequestError
         import httpx
-        mock_http.request = AsyncMock(side_effect=httpx.RequestError("Service unavailable"))
+
+        mock_http.request = AsyncMock(
+            side_effect=httpx.RequestError("Service unavailable")
+        )
 
         response = client.get("/auth/test-endpoint")
 
