@@ -159,6 +159,7 @@ class APIMessages:
 # Correlation ID Header
 CORRELATION_ID_HEADER = "X-Correlation-ID"
 
+
 # Health Check Constants
 class HealthStatus(str, Enum):
     HEALTHY = "healthy"
