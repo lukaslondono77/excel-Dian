@@ -17,9 +17,10 @@ class TestHealthCheck:
 
     def test_health_check_success(self):
         """Test successful health check."""
-        with patch("api_gateway.main.redis_client") as mock_redis, patch(
-            "api_gateway.main.http_client"
-        ) as mock_http:
+        with (
+            patch("api_gateway.main.redis_client") as mock_redis,
+            patch("api_gateway.main.http_client") as mock_http,
+        ):
 
             # Mock Redis methods for rate limiting
             mock_redis.get.return_value = "10"  # Normal rate limit count
@@ -47,9 +48,10 @@ class TestHealthCheck:
 
     def test_health_check_redis_failure(self):
         """Test health check with Redis failure."""
-        with patch("api_gateway.main.redis_client") as mock_redis, patch(
-            "api_gateway.main.http_client"
-        ) as mock_http:
+        with (
+            patch("api_gateway.main.redis_client") as mock_redis,
+            patch("api_gateway.main.http_client") as mock_http,
+        ):
 
             # Mock Redis methods for rate limiting
             mock_redis.get.return_value = "10"  # Normal rate limit count

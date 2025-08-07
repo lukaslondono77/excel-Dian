@@ -81,12 +81,12 @@ class Settings(BaseSettings):
 
     # CORS configuration
     cors_origins: str = "http://localhost:3000,http://localhost:8000"
-    allowed_hosts: str = "localhost,127.0.0.1"
+    allowed_hosts: str = "localhost,127.0.0.1,testserver"
 
     # Rate limiting
     default_requests_per_minute: int = 60
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()
@@ -232,7 +232,9 @@ async def rate_limit_middleware(request: Request, call_next):
         pipe.execute()
 
     except Exception as e:
-        logger.error("Rate limiting error", error=str(e))
+        # Only log error if not in testing environment
+        if settings.environment != "testing":
+            logger.error("Rate limiting error", error=str(e))
         # Continue without rate limiting if Redis is unavailable
 
     return await call_next(request)
