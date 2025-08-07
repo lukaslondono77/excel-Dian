@@ -21,7 +21,15 @@ class TestHealthCheck:
             "api_gateway.main.http_client"
         ) as mock_http:
 
-            # Mock Redis ping
+            # Mock Redis methods for rate limiting
+            mock_redis.get.return_value = "10"  # Normal rate limit count
+            mock_pipeline = Mock()
+            mock_redis.pipeline.return_value = mock_pipeline
+            mock_pipeline.incr.return_value = mock_pipeline
+            mock_pipeline.expire.return_value = mock_pipeline
+            mock_pipeline.execute.return_value = [11]  # Incremented count
+            
+            # Mock Redis ping for health check
             mock_redis.ping.return_value = True
 
             # Mock HTTP responses
@@ -43,7 +51,15 @@ class TestHealthCheck:
             "api_gateway.main.http_client"
         ) as mock_http:
 
-            # Mock Redis failure
+            # Mock Redis methods for rate limiting
+            mock_redis.get.return_value = "10"  # Normal rate limit count
+            mock_pipeline = Mock()
+            mock_redis.pipeline.return_value = mock_pipeline
+            mock_pipeline.incr.return_value = mock_pipeline
+            mock_pipeline.expire.return_value = mock_pipeline
+            mock_pipeline.execute.return_value = [11]  # Incremented count
+            
+            # Mock Redis failure for health check
             mock_redis.ping.side_effect = Exception("Redis connection failed")
 
             # Mock HTTP responses
@@ -64,8 +80,13 @@ class TestMetrics:
     @patch("api_gateway.main.redis_client")
     def test_metrics_endpoint(self, mock_redis):
         """Test metrics endpoint returns Prometheus format."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         response = client.get("/metrics")
 
@@ -80,8 +101,13 @@ class TestRoot:
     @patch("api_gateway.main.redis_client")
     def test_root_endpoint(self, mock_redis):
         """Test root endpoint returns service information."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         response = client.get("/")
 
@@ -99,8 +125,13 @@ class TestCorrelationId:
     @patch("api_gateway.main.redis_client")
     def test_correlation_id_header(self, mock_redis):
         """Test that correlation ID is added to response headers."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         response = client.get("/health")
 
@@ -110,8 +141,13 @@ class TestCorrelationId:
     @patch("api_gateway.main.redis_client")
     def test_correlation_id_preserved(self, mock_redis):
         """Test that provided correlation ID is preserved."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         test_correlation_id = "test-correlation-id-123"
         response = client.get(
@@ -153,8 +189,13 @@ class TestCORS:
     @patch("api_gateway.main.redis_client")
     def test_cors_headers(self, mock_redis):
         """Test that CORS headers are present."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         response = client.options("/health")
 
@@ -171,8 +212,13 @@ class TestServiceRouting:
     @patch("api_gateway.main.http_client")
     def test_auth_service_proxy(self, mock_http, mock_redis):
         """Test auth service proxy routing."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         # Mock successful response
         mock_response = Mock()
@@ -190,8 +236,13 @@ class TestServiceRouting:
     @patch("api_gateway.main.http_client")
     def test_dian_service_proxy(self, mock_http, mock_redis):
         """Test DIAN service proxy routing."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         # Mock successful response
         mock_response = Mock()
@@ -209,8 +260,13 @@ class TestServiceRouting:
     @patch("api_gateway.main.http_client")
     def test_excel_service_proxy(self, mock_http, mock_redis):
         """Test Excel service proxy routing."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         # Mock successful response
         mock_response = Mock()
@@ -228,8 +284,13 @@ class TestServiceRouting:
     @patch("api_gateway.main.http_client")
     def test_pdf_service_proxy(self, mock_http, mock_redis):
         """Test PDF service proxy routing."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         # Mock successful response
         mock_response = Mock()
@@ -247,8 +308,13 @@ class TestServiceRouting:
     @patch("api_gateway.main.http_client")
     def test_service_unavailable(self, mock_http, mock_redis):
         """Test service unavailable handling."""
-        # Mock Redis to avoid connection errors
+        # Mock Redis methods for rate limiting
         mock_redis.get.return_value = "10"  # Normal rate limit count
+        mock_pipeline = Mock()
+        mock_redis.pipeline.return_value = mock_pipeline
+        mock_pipeline.incr.return_value = mock_pipeline
+        mock_pipeline.expire.return_value = mock_pipeline
+        mock_pipeline.execute.return_value = [11]  # Incremented count
 
         # Mock service failure
         mock_http.request.side_effect = Exception("Service unavailable")
