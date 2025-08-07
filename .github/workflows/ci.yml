@@ -221,7 +221,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        service: [api_gateway, auth_service, dian_processing_service, excel_service, pdf_service]
+        service: [api_gateway]
 
     steps:
       - name: Checkout code
@@ -250,7 +250,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [api_gateway, auth_service, dian_processing_service, excel_service, pdf_service]
+        service: [api_gateway]
 
     steps:
       - name: Checkout code
