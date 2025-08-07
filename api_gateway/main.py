@@ -86,8 +86,7 @@ class Settings(BaseSettings):
     # Rate limiting
     default_requests_per_minute: int = 60
 
-    class Config:
-        env_file = ".env"
+    model_config = {"env_file": ".env"}
 
 
 settings = Settings()

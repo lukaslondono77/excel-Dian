@@ -61,8 +61,12 @@ class TestHealthCheck:
 class TestMetrics:
     """Test metrics endpoint."""
 
-    def test_metrics_endpoint(self):
+    @patch("api_gateway.main.redis_client")
+    def test_metrics_endpoint(self, mock_redis):
         """Test metrics endpoint returns Prometheus format."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         response = client.get("/metrics")
 
         assert response.status_code == 200
@@ -73,8 +77,12 @@ class TestMetrics:
 class TestRoot:
     """Test root endpoint."""
 
-    def test_root_endpoint(self):
+    @patch("api_gateway.main.redis_client")
+    def test_root_endpoint(self, mock_redis):
         """Test root endpoint returns service information."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         response = client.get("/")
 
         assert response.status_code == 200
@@ -88,15 +96,23 @@ class TestRoot:
 class TestCorrelationId:
     """Test correlation ID functionality."""
 
-    def test_correlation_id_header(self):
+    @patch("api_gateway.main.redis_client")
+    def test_correlation_id_header(self, mock_redis):
         """Test that correlation ID is added to response headers."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         response = client.get("/health")
 
         assert "X-Correlation-ID" in response.headers
         assert response.headers["X-Correlation-ID"] is not None
 
-    def test_correlation_id_preserved(self):
+    @patch("api_gateway.main.redis_client")
+    def test_correlation_id_preserved(self, mock_redis):
         """Test that provided correlation ID is preserved."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         test_correlation_id = "test-correlation-id-123"
         response = client.get(
             "/health", headers={"X-Correlation-ID": test_correlation_id}
@@ -134,8 +150,12 @@ class TestRateLimiting:
 class TestCORS:
     """Test CORS functionality."""
 
-    def test_cors_headers(self):
+    @patch("api_gateway.main.redis_client")
+    def test_cors_headers(self, mock_redis):
         """Test that CORS headers are present."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         response = client.options("/health")
 
         # CORS headers should be present
@@ -147,9 +167,13 @@ class TestCORS:
 class TestServiceRouting:
     """Test service routing functionality."""
 
+    @patch("api_gateway.main.redis_client")
     @patch("api_gateway.main.http_client")
-    def test_auth_service_proxy(self, mock_http):
+    def test_auth_service_proxy(self, mock_http, mock_redis):
         """Test auth service proxy routing."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -162,9 +186,13 @@ class TestServiceRouting:
         # Should proxy to auth service
         assert response.status_code == 200
 
+    @patch("api_gateway.main.redis_client")
     @patch("api_gateway.main.http_client")
-    def test_dian_service_proxy(self, mock_http):
+    def test_dian_service_proxy(self, mock_http, mock_redis):
         """Test DIAN service proxy routing."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -177,9 +205,13 @@ class TestServiceRouting:
         # Should proxy to DIAN service
         assert response.status_code == 200
 
+    @patch("api_gateway.main.redis_client")
     @patch("api_gateway.main.http_client")
-    def test_excel_service_proxy(self, mock_http):
+    def test_excel_service_proxy(self, mock_http, mock_redis):
         """Test Excel service proxy routing."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -192,9 +224,13 @@ class TestServiceRouting:
         # Should proxy to Excel service
         assert response.status_code == 200
 
+    @patch("api_gateway.main.redis_client")
     @patch("api_gateway.main.http_client")
-    def test_pdf_service_proxy(self, mock_http):
+    def test_pdf_service_proxy(self, mock_http, mock_redis):
         """Test PDF service proxy routing."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         # Mock successful response
         mock_response = Mock()
         mock_response.content = b'{"message": "success"}'
@@ -207,9 +243,13 @@ class TestServiceRouting:
         # Should proxy to PDF service
         assert response.status_code == 200
 
+    @patch("api_gateway.main.redis_client")
     @patch("api_gateway.main.http_client")
-    def test_service_unavailable(self, mock_http):
+    def test_service_unavailable(self, mock_http, mock_redis):
         """Test service unavailable handling."""
+        # Mock Redis to avoid connection errors
+        mock_redis.get.return_value = "10"  # Normal rate limit count
+        
         # Mock service failure
         mock_http.request.side_effect = Exception("Service unavailable")
 
